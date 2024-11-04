@@ -56,27 +56,20 @@ GROUP BY 1;
 ### 2. Find the Most Common Rating for Movies and TV Shows
 
 ```sql
-WITH RatingCounts AS (
-    SELECT 
-        type,
-        rating,
-        COUNT(*) AS rating_count
+SELECT  
+     type,
+     rating
+FROM
+(
+SELECT
+    type, rating,
+    count(*),
+	RANK() over(partition by type order by count(*) desc) as ranking
     FROM netflix
-    GROUP BY type, rating
-),
-RankedRatings AS (
-    SELECT 
-        type,
-        rating,
-        rating_count,
-        RANK() OVER (PARTITION BY type ORDER BY rating_count DESC) AS rank
-    FROM RatingCounts
-)
-SELECT 
-    type,
-    rating AS most_frequent_rating
-FROM RankedRatings
-WHERE rank = 1;
+    Group by 1,2
+) as t1
+WHERE
+   ranking=1 ;
 ```
 
 **Objective:** Identify the most frequently occurring rating for each type of content.
@@ -84,9 +77,11 @@ WHERE rank = 1;
 ### 3. List All Movies Released in a Specific Year (e.g., 2020)
 
 ```sql
-SELECT * 
+SELECT *
 FROM netflix
-WHERE release_year = 2020;
+where type='Movie'
+      And
+	  release_year=2020;
 ```
 
 **Objective:** Retrieve all movies released in a specific year.
@@ -94,18 +89,13 @@ WHERE release_year = 2020;
 ### 4. Find the Top 5 Countries with the Most Content on Netflix
 
 ```sql
-SELECT * 
-FROM
-(
-    SELECT 
-        UNNEST(STRING_TO_ARRAY(country, ',')) AS country,
-        COUNT(*) AS total_content
-    FROM netflix
-    GROUP BY 1
-) AS t1
-WHERE country IS NOT NULL
-ORDER BY total_content DESC
-LIMIT 5;
+SELECT
+  UNNEST(string_to_array(country,',')) as new_country,
+  count (show_id) as total_content
+FROM netflix
+Group by 1
+Order by  2 desc
+Limit 5;
 ```
 
 **Objective:** Identify the top 5 countries with the highest number of content items.
@@ -113,11 +103,10 @@ LIMIT 5;
 ### 5. Identify the Longest Movie
 
 ```sql
-SELECT 
-    *
-FROM netflix
-WHERE type = 'Movie'
-ORDER BY SPLIT_PART(duration, ' ', 1)::INT DESC;
+SELECT * FROM netflix
+where type='Movie'
+       and 
+	  duration=(select max(duration) from netflix);
 ```
 
 **Objective:** Find the movie with the longest duration.
@@ -125,9 +114,9 @@ ORDER BY SPLIT_PART(duration, ' ', 1)::INT DESC;
 ### 6. Find Content Added in the Last 5 Years
 
 ```sql
-SELECT *
-FROM netflix
-WHERE TO_DATE(date_added, 'Month DD, YYYY') >= CURRENT_DATE - INTERVAL '5 years';
+SELECT * FROM netflix
+WHERE
+ TO_DATE(date_added, 'Month DD, YYYY') >= CURRENT_DATE - INTERVAL '5 years';
 ```
 
 **Objective:** Retrieve content added to Netflix in the last 5 years.
@@ -135,14 +124,8 @@ WHERE TO_DATE(date_added, 'Month DD, YYYY') >= CURRENT_DATE - INTERVAL '5 years'
 ### 7. Find All Movies/TV Shows by Director 'Rajiv Chilaka'
 
 ```sql
-SELECT *
-FROM (
-    SELECT 
-        *,
-        UNNEST(STRING_TO_ARRAY(director, ',')) AS director_name
-    FROM netflix
-) AS t
-WHERE director_name = 'Rajiv Chilaka';
+SELECT * FROM NETFLIX
+WHERE director Ilike '%Rajiv Chilaka%';
 ```
 
 **Objective:** List all content directed by 'Rajiv Chilaka'.
