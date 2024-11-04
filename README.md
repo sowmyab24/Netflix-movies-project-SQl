@@ -157,19 +157,14 @@ GROUP BY 1;
 return top 5 year with highest avg content release!
 
 ```sql
-SELECT 
-    country,
-    release_year,
-    COUNT(show_id) AS total_release,
-    ROUND(
-        COUNT(show_id)::numeric /
-        (SELECT COUNT(show_id) FROM netflix WHERE country = 'India')::numeric * 100, 2
-    ) AS avg_release
+SELECT
+EXTRACT(YEAR FROM TO_DATE(date_added , 'Month dd,yyyy')) as year,
+COUNT(*) as yearly_content,
+round(count(*)::numeric/(select count(*) from netflix where country='India')::
+numeric*100,2) as  avg_content_per_year
 FROM netflix
-WHERE country = 'India'
-GROUP BY country, release_year
-ORDER BY avg_release DESC
-LIMIT 5;
+WHERE country='India'
+Group by 1
 ```
 
 **Objective:** Calculate and rank years by the average number of content releases by India.
@@ -209,13 +204,14 @@ WHERE casts LIKE '%Salman Khan%'
 
 ```sql
 SELECT 
-    UNNEST(STRING_TO_ARRAY(casts, ',')) AS actor,
-    COUNT(*)
+UNNEST(string_to_array(casts,',')) as actors,
+count(*) as total_content
 FROM netflix
-WHERE country = 'India'
-GROUP BY actor
-ORDER BY COUNT(*) DESC
-LIMIT 10;
+WHERE country ilike '%India%'
+Group by 1
+Order by 2 desc
+Limit 10;
+
 ```
 
 **Objective:** Identify the top 10 actors with the most appearances in Indian-produced movies.
@@ -223,18 +219,21 @@ LIMIT 10;
 ### 15. Categorize Content Based on the Presence of 'Kill' and 'Violence' Keywords
 
 ```sql
+WITH new_table
+as 
+(
+SELECT *,
+Case when  description ilike '%kill%'or
+     description ilike '% violence%' then 'Bad_content'
+     else 'Good_content'
+end category
+FROM netflix
+)
 SELECT 
-    category,
-    COUNT(*) AS content_count
-FROM (
-    SELECT 
-        CASE 
-            WHEN description ILIKE '%kill%' OR description ILIKE '%violence%' THEN 'Bad'
-            ELSE 'Good'
-        END AS category
-    FROM netflix
-) AS categorized_content
-GROUP BY category;
+category,
+count(*) as total_content
+from new_table
+Group by 1;
 ```
 
 **Objective:** Categorize content as 'Bad' if it contains 'kill' or 'violence' and 'Good' otherwise. Count the number of items in each category.
