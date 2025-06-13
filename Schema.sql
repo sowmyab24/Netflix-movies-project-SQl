@@ -1,5 +1,5 @@
 --Netflix project
-Drop TABLE IF EXXISTS NETFLIX;
+Drop TABLE IF EXISTS NETFLIX;
 CREATE TABLE netflix
 (
    show_id VARCHAR(10),
